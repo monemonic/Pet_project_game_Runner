@@ -45,6 +45,61 @@ knight = Knight(100, 400)
 knight_group.add(knight)
 
 
+def collision_trap_check():  # Проверка коллизии между ловушкой и персонажем
+    global run_game
+    if (
+            not knight.knight_jump and
+            knight.rect.right - 80 > trap.rect.left and
+            knight.rect.left < trap.rect.right and
+            knight.rect.bottomright[1] - 15 < trap.rect.bottomleft[1] and
+            knight.rect.bottomright[1] - 25 > trap.rect.topleft[1]
+    ):
+        run_game = False
+
+
+def collision_static_stone_check():  # Проверка коллизии между
+    global run_game                  # статическим камнем и персонажем
+    if (
+            knight.rect.right - 80 > static_stone.rect.left and
+            knight.rect.left < static_stone.rect.right and
+            (knight.rect.bottomright[1] - 15 <
+             static_stone.rect.bottomleft[1]
+             ) and
+            (knight.rect.bottomright[1] + 15 >
+             static_stone.rect.bottomleft[1]
+             )
+    ):
+        run_game = False
+
+
+def collision_stone_check():  # Проверка коллизии между летящим
+    global run_game           # камнем и персонажем
+    if (
+        knight.rect.x > stone_sp.rect.x - 60
+        and knight.rect.x < stone_sp.rect.x + 60
+        and knight.rect.y > stone_sp.rect.y + 30
+        and knight.rect.y < stone_sp.rect.y + 30
+            ):
+        run_game = False
+
+
+def rendering_sequence():  # Последовательность отрисовки спрайтов
+    if knight.rect.bottomright[1] > static_stone.rect.bottomright[1]+20:
+        static_stone_group.draw(screen)
+        static_stone_group.update()
+        stone_group.draw(screen)
+        stone_group.update()
+        knight_group.draw(screen)
+        knight_group.update()
+    else:
+        knight_group.draw(screen)
+        knight_group.update()
+        static_stone_group.draw(screen)
+        static_stone_group.update()
+        stone_group.draw(screen)
+        stone_group.update()
+
+
 def start_window():  # Главное меню
     global run_game, run_button_start
 
@@ -93,68 +148,32 @@ def game():  # Главный функционал игры
 
         screen.blit(background, (0, 0))
         screen.blit(ground, (ground_scroll, 188))
-
-        ground_scroll -= GROUND_SPEED
+        screen.blit(
+            pygame.transform.scale(
+                screen, (SCREEN_WIDTH, SCRENN_HEIGHT)
+            ), render_offset
+        )
         trap_group.draw(screen)
         trap_group.update()
 
-        if knight.rect.bottomright[1] > static_stone.rect.bottomright[1]+20:
-            static_stone_group.draw(screen)
-            static_stone_group.update()
-            stone_group.draw(screen)
-            stone_group.update()
-            knight_group.draw(screen)
-            knight_group.update()
-        else:
-            knight_group.draw(screen)
-            knight_group.update()
-            static_stone_group.draw(screen)
-            static_stone_group.update()
-            stone_group.draw(screen)
-            stone_group.update()
+        ground_scroll -= GROUND_SPEED
+
+        rendering_sequence()
+        collision_trap_check()
+        collision_static_stone_check()
 
         if abs(ground_scroll) > 3160:
             ground_scroll = 0
 
         if stone_sp.count == 1:
-            if (
-                knight.rect.x > stone_sp.rect.x - 60
-                and knight.rect.x < stone_sp.rect.x + 60
-                and knight.rect.y > stone_sp.rect.y + 30
-                and knight.rect.y < stone_sp.rect.y + 30
-            ):
-                run_game = False
-
+            collision_stone_check()
             stone_sp.direction_stone = knight.rect.x / 150
             screen_shake = 30
             static_stone.rect.x = stone_sp.rect.x
             static_stone.rect.y = stone_sp.rect.y
 
-        if (
-            not knight.knight_jump and
-            knight.rect.right - 80 > trap.rect.left and
-            knight.rect.left < trap.rect.right and
-            knight.rect.bottomright[1] - 15 < trap.rect.bottomleft[1] and
-            knight.rect.bottomright[1] - 25 > trap.rect.topleft[1]
-        ):
-            run_game = False
-
-        if (
-            knight.rect.right - 80 > static_stone.rect.left and
-            knight.rect.left < static_stone.rect.right and
-            (knight.rect.bottomright[1] - 15 <
-             static_stone.rect.bottomleft[1]
-             ) and
-            (knight.rect.bottomright[1] + 15 >
-             static_stone.rect.bottomleft[1]
-             )
-        ):
-            run_game = False
-
-        if screen_shake > 0:
-            screen_shake -= 1
-
         if screen_shake:
+            screen_shake -= 1
             render_offset[0] = random.randint(0, 8) - 4
             render_offset[1] = random.randint(0, 8) - 4
 
@@ -163,11 +182,6 @@ def game():  # Главный функционал игры
                 run_game = False
                 pygame.quit()
 
-        screen.blit(
-            pygame.transform.scale(
-                screen, (SCREEN_WIDTH, SCRENN_HEIGHT)
-            ), render_offset
-        )
         pygame.display.update()
 
 
